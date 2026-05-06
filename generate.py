@@ -4,7 +4,7 @@ import re, json, os
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 HTML = os.path.join(HERE, "index.html")
-FILES = {"words":"单词本.md","knowledge":"知识本.md","guide":"指南本.md","abbreviations":"缩略词.md"}
+FILES = {"words":"单词本.md","knowledge":"知识本.md","guide":"指南书.md","abbreviations":"缩略词.md"}
 
 def rd(name):
     with open(os.path.join(HERE,FILES[name]),encoding='utf-8') as f:
@@ -81,15 +81,25 @@ def parse_abbreviation(text):
     return secs
 
 def parse_guide(text):
-    secs,cur,cl=[],None,[]
+    secs,cur,sub,cl=[],None,None,[]
     for line in text.split('\n'):
         if line.startswith('## '):
-            if cur:cur["content"]=''.join(cl);secs.append(cur);cl=[]
+            if cur:
+                if sub:sub["html"]=''.join(cl);cur.setdefault('subs',[]).append(sub);sub=None;cl=[]
+                secs.append(cur)
             t=line.strip('# ').strip()
             if t=='目录':cur=None;continue  # skip 目录
-            cur={"id":"g-"+re.sub(r'[^\w\u4e00-\u9fff]+','-',t).strip('-').lower(),"label":t,"content":''}
+            cur={"id":"g-"+re.sub(r'[^\w\u4e00-\u9fff]+','-',t).strip('-').lower(),"label":t,"subs":[]}
+        elif cur and line.startswith('### '):
+            if sub:sub["html"]=''.join(cl);cur['subs'].append(sub);cl=[]
+            st=line.strip('# ').strip()
+            sk=cur['id']+'-'+re.sub(r'[^\w\u4e00-\u9fff]+','-',st).strip('-').lower()
+            sub={"id":sk,"label":st,"html":''}
+        elif sub:cl.append(line+'\n')
         elif cur:cl.append(line+'\n')
-    if cur:cur["content"]=''.join(cl);secs.append(cur)
+    if cur:
+        if sub:sub["html"]=''.join(cl);cur.setdefault('subs',[]).append(sub)
+        secs.append(cur)
     return secs
 
 def md2html(md):
@@ -129,10 +139,12 @@ def build():
         for sub in sec.get('subs',[]):
             sub['html']=md2html(sub.get('html',''))
     for sec in g:
-        sec['content']=md2html(sec.get('content',''))
+        if sec.get('empty'):continue
+        for sub in sec.get('subs',[]):
+            sub['html']=md2html(sub.get('html',''))
     return {"words":{"title":"单词本","sections":w},
             "knowledge":{"title":"知识本","sections":k},
-            "guide":{"title":"指南本","sections":g},
+            "guide":{"title":"指南书","sections":g},
             "abbreviations":{"title":"缩略词","sections":a}}
 
 def gen_js():
