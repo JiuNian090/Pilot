@@ -9,6 +9,16 @@
 :root{--bg:#F4F3EE;--bg-card:#FAF9F5;--sidebar-bg:#EDEAE2;--accent:#B5846E;--accent-hover:#A27460;--accent-light:rgba(181,132,110,0.10);--accent-light2:rgba(181,132,110,0.06);--text:#2D2B28;--text-light:#6B6864;--text-muted:#9B9793;--border:rgba(177,173,161,0.28);--shadow:rgba(45,43,40,0.07);--header-h:52px;--tab-h:46px;--sidebar-w:260px}
 html{font-size:15px;scroll-behavior:smooth}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);line-height:1.7;min-height:100vh;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E"),linear-gradient(180deg,#F4F3EE 0%,#F2F0EA 100%);background-size:256px 256px,100% 100%}
+.menu-btn{display:none;width:40px;height:40px;align-items:center;justify-content:center;cursor:pointer;border:none;background:transparent;border-radius:4px;transition:background .15s}
+.menu-btn:hover{background:var(--accent-light2)}
+.menu-btn .hamburger{width:20px;height:14px;position:relative}
+.menu-btn .hamburger span{position:absolute;left:0;right:0;height:2px;background:var(--text);border-radius:1px;transition:all .2s}
+.menu-btn .hamburger span:nth-child(1){top:0}
+.menu-btn .hamburger span:nth-child(2){top:6px}
+.menu-btn .hamburger span:nth-child(3){top:12px}
+.menu-btn.active .hamburger span:nth-child(1){top:6px;transform:rotate(45deg)}
+.menu-btn.active .hamburger span:nth-child(2){opacity:0}
+.menu-btn.active .hamburger span:nth-child(3){top:6px;transform:rotate(-45deg)}
 .header{position:fixed;top:0;left:0;right:0;z-index:200;height:var(--header-h);background:var(--bg-card);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:10px;backdrop-filter:blur(8px)}
 .header .logo{display:flex;align-items:center;gap:6px;font-size:1.6rem;letter-spacing:1px}
 .header .logo .icon{font-size:1.7rem;font-style:italic;color:var(--accent)}
@@ -19,7 +29,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Micr
 .tab-btn:hover{color:var(--text);background:var(--accent-light2)}
 .tab-btn.active{color:var(--accent);font-weight:600;border-bottom-color:var(--accent);background:#D8D3C8}
 .wrapper{display:flex;padding-top:calc(var(--header-h) + var(--tab-h));min-height:100vh}
-.sidebar{position:fixed;top:calc(var(--header-h) + var(--tab-h));left:0;bottom:0;width:var(--sidebar-w);background:var(--sidebar-bg);border-right:1px solid var(--border);overflow-y:auto;z-index:80;padding:24px 0 24px}
+.sidebar{position:fixed;top:calc(var(--header-h) + var(--tab-h));left:0;bottom:0;width:var(--sidebar-w);background:var(--sidebar-bg);border-right:1px solid var(--border);overflow-y:auto;z-index:80;padding:24px 0 24px;transition:transform .25s ease-out}
 .sidebar::-webkit-scrollbar{width:4px}
 .sidebar::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
 .sidebar .sec-title{padding:0 14px 4px;font-size:0.72rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.8px}
@@ -27,7 +37,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Micr
 .sidebar a:hover{background:var(--accent-light);color:var(--text)}
 .sidebar a.active{color:var(--accent);font-weight:500;border-left-color:var(--accent);background:#D8D3C8}
 .sidebar a.sub{padding-left:30px;font-size:.82rem}
-.main{margin-left:var(--sidebar-w);flex:1;min-width:0;padding:24px 36px 24px}
+.overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.45);z-index:75;opacity:0;transition:opacity .2s}
+.overlay.active{opacity:1}
+.main{margin-left:var(--sidebar-w);flex:1;min-width:0;padding:24px 36px 24px;transition:margin-left .25s ease-out}
 .content-card{background:var(--bg-card);border:1px solid var(--border);border-radius:5px;padding:24px 32px 28px;box-shadow:0 1px 3px var(--shadow);margin-bottom:24px}
 .content-card:target{border-left:3px solid var(--accent);box-shadow:0 2px 8px rgba(181,132,110,0.12)}
 .content-card h1{font-size:1.5rem;font-weight:700;color:var(--text);margin-bottom:14px;padding-bottom:10px;border-bottom:2px solid var(--accent)}
@@ -58,13 +70,32 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Micr
 .nav-btn{padding:8px 18px;border:1px solid var(--border);border-radius:4px;background:var(--bg-card);color:var(--text-light);cursor:pointer;font-size:.85rem;text-decoration:none;transition:all .12s}
 .nav-btn:hover{background:var(--accent-light);color:var(--accent);border-color:var(--accent)}
 .nav-btn.disabled{opacity:.3;cursor:default;pointer-events:none}
-@media(max-width:768px){.sidebar{display:none}.main{margin-left:0;padding:16px}.content-card{padding:18px}.tab-btn{flex:1;justify-content:center;padding:0 10px;font-size:.82rem}}
+@media(max-width:768px){
+  .menu-btn{display:flex}
+  .sidebar{transform:translateX(-100%);z-index:180}
+  .sidebar.open{transform:translateX(0)}
+  .overlay{display:block}
+  .main{margin-left:0;padding:16px}
+  .content-card{padding:16px}
+  .tab-btn{flex:1;justify-content:center;padding:0 8px;font-size:.78rem}
+  .header{padding:0 12px}
+  .header .logo{font-size:1.3rem}
+  .header .logo .brand{font-size:1.4rem}
+  .header .logo .suffix{font-size:1.25rem}
+}
 .scroll-anchor{scroll-margin-top:calc(var(--header-h) + var(--tab-h) + 16px)}
 </style>
 </head>
 <body>
 
 <header class="header">
+  <button class="menu-btn" id="menuBtn" aria-label="打开菜单">
+    <div class="hamburger">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+  </button>
   <div class="logo"><span class="icon">&#9992;</span><span class="brand">Pilot</span><span class="suffix">Knowledge</span></div>
 </header>
 
@@ -74,6 +105,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Micr
   <div class="tab-btn" data-nb="guide" onclick="switchNotebook('guide')">指南书</div>
   <div class="tab-btn" data-nb="abbreviations" onclick="switchNotebook('abbreviations')">缩略词</div>
 </div>
+
+<div class="overlay" id="overlay"></div>
 
 <div class="wrapper">
   <nav class="sidebar" id="sidebar"></nav>
@@ -246,6 +279,34 @@ function handleHashChange(){
   }
 }
 window.addEventListener('hashchange',handleHashChange);
+
+// 移动端菜单开关
+const menuBtn = document.getElementById('menuBtn');
+const sidebar = document.getElementById('sidebar');
+const overlay = document.getElementById('overlay');
+
+function toggleMenu() {
+  menuBtn.classList.toggle('active');
+  sidebar.classList.toggle('open');
+  overlay.classList.toggle('active');
+}
+
+function closeMenu() {
+  menuBtn.classList.remove('active');
+  sidebar.classList.remove('open');
+  overlay.classList.remove('active');
+}
+
+menuBtn.addEventListener('click', toggleMenu);
+overlay.addEventListener('click', closeMenu);
+
+// 点击侧边栏链接时关闭菜单
+sidebar.addEventListener('click', function(e) {
+  if (e.target.tagName === 'A') {
+    closeMenu();
+  }
+});
+
 switchNotebook('words');
 </script>
 </body>
