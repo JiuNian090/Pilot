@@ -4,7 +4,7 @@ import re, json, os
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 HTML = os.path.join(HERE, "index.html")
-FILES = {"words":"单词本.md","knowledge":"知识本.md","guide":"指南本.md"}
+FILES = {"words":"单词本.md","knowledge":"知识本.md","guide":"指南本.md","abbreviations":"缩略词.md"}
 
 def rd(name):
     with open(os.path.join(HERE,FILES[name]),encoding='utf-8') as f:
@@ -44,6 +44,39 @@ def parse_knowledge(text):
         elif cur and '*暂无内容*' in line:cur["empty"]=True
     if cur:
         if sub:sub["html"]=''.join(cl);cur.setdefault('subs',[]).append(sub)
+        secs.append(cur)
+    return secs
+
+def parse_abbreviation(text):
+    secs, cur, sub = [], None, None
+    for line in text.split('\n'):
+        if line.startswith('## '):
+            if cur:
+                if sub: cur.setdefault('subs',[]).append(sub); sub = None
+                if not cur.get('subs') and not cur.get('items'): cur['empty'] = True
+                secs.append(cur)
+            t = line.strip('# ').strip()
+            cur = {"id": "a-"+re.sub(r'[^\w\u4e00-\u9fff]+','-',t).strip('-').lower(), "label": t, "empty": True}
+            if 'items' in cur: del cur['items']
+            sub = None
+        elif cur and line.startswith('### '):
+            if sub: cur.setdefault('subs',[]).append(sub)
+            st = line.strip('# ').strip()
+            sk = cur['id']+'-'+re.sub(r'[^\w\u4e00-\u9fff]+','-',st).strip('-').lower()
+            sub = {"id": sk, "label": st, "items": []}
+        elif cur and '|' in line and line.strip().startswith('|') and line.strip().endswith('|'):
+            cells = [c.strip() for c in line.strip('|').split('|')]
+            if len(cells)>=2 and cells[0] and cells[0] not in ('缩写','缩写/代码') and not re.match(r'^[\s\-:]+$',cells[0]):
+                it = [cells[0], cells[1] if len(cells)>1 else '', cells[2] if len(cells)>2 else '']
+                if sub:
+                    sub['items'].append(it)
+                    cur['empty'] = False
+                else:
+                    cur.setdefault('items',[]).append(it)
+                    cur['empty'] = False
+    if cur:
+        if sub: cur.setdefault('subs',[]).append(sub)
+        if not cur.get('subs') and not cur.get('items'): cur['empty'] = True
         secs.append(cur)
     return secs
 
@@ -90,6 +123,7 @@ def build():
     w=parse_words(rd('words'))
     k=parse_knowledge(rd('knowledge'))
     g=parse_guide(rd('guide'))
+    a=parse_abbreviation(rd('abbreviations'))
     for sec in k:
         if sec.get('empty'):continue
         for sub in sec.get('subs',[]):
@@ -98,7 +132,8 @@ def build():
         sec['content']=md2html(sec.get('content',''))
     return {"words":{"title":"单词本","sections":w},
             "knowledge":{"title":"知识本","sections":k},
-            "guide":{"title":"指南本","sections":g}}
+            "guide":{"title":"指南本","sections":g},
+            "abbreviations":{"title":"缩略词","sections":a}}
 
 def gen_js():
     return 'const DATA = '+json.dumps(build(),ensure_ascii=False)+';'
@@ -125,7 +160,10 @@ def main():
     for k,v in d.items():
         n=sum(len(s.get('items',[])) for s in v['sections'])
         b=sum(len(s.get('subs',[])) for s in v['sections'])
-        print(f'  {k}: {n} items, {b} subs, {len(v["sections"])} sections')
+        # also count items inside subs
+        si=sum(sum(len(sb.get('items',[])) for sb in s.get('subs',[])) for s in v['sections'])
+        tot=n+si
+        print(f'  {k}: {tot} items, {b} subs, {len(v["sections"])} sections')
     print('[OK]')
 
 if __name__=='__main__':main()
