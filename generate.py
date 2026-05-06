@@ -85,20 +85,35 @@ def parse_guide(text):
     for line in text.split('\n'):
         if line.startswith('## '):
             if cur:
-                if sub:sub["html"]=''.join(cl);cur.setdefault('subs',[]).append(sub);sub=None;cl=[]
+                if sub:
+                    sub["html"]=''.join(cl)
+                    cur.setdefault('subs',[]).append(sub)
+                else:
+                    cur["content"]=''.join(cl)
                 secs.append(cur)
             t=line.strip('# ').strip()
             if t=='目录':cur=None;continue  # skip 目录
             cur={"id":"g-"+re.sub(r'[^\w\u4e00-\u9fff]+','-',t).strip('-').lower(),"label":t,"subs":[]}
+            sub=None
+            cl=[]
         elif cur and line.startswith('### '):
-            if sub:sub["html"]=''.join(cl);cur['subs'].append(sub);cl=[]
+            if sub:
+                sub["html"]=''.join(cl)
+                cur['subs'].append(sub)
             st=line.strip('# ').strip()
             sk=cur['id']+'-'+re.sub(r'[^\w\u4e00-\u9fff]+','-',st).strip('-').lower()
             sub={"id":sk,"label":st,"html":''}
-        elif sub:cl.append(line+'\n')
-        elif cur:cl.append(line+'\n')
+            cl=[]
+        elif sub:
+            cl.append(line+'\n')
+        elif cur:
+            cl.append(line+'\n')
     if cur:
-        if sub:sub["html"]=''.join(cl);cur.setdefault('subs',[]).append(sub)
+        if sub:
+            sub["html"]=''.join(cl)
+            cur.setdefault('subs',[]).append(sub)
+        else:
+            cur["content"]=''.join(cl)
         secs.append(cur)
     return secs
 
@@ -139,9 +154,13 @@ def build():
         for sub in sec.get('subs',[]):
             sub['html']=md2html(sub.get('html',''))
     for sec in g:
-        if sec.get('empty'):continue
-        for sub in sec.get('subs',[]):
-            sub['html']=md2html(sub.get('html',''))
+        if sec.get('subs') and len(sec.get('subs',[]))>0:
+            # 有子章节
+            for sub in sec.get('subs',[]):
+                sub['html']=md2html(sub.get('html',''))
+        elif sec.get('content'):
+            # 没有子章节，只有内容
+            sec['content']=md2html(sec.get('content',''))
     return {"words":{"title":"单词本","sections":w},
             "knowledge":{"title":"知识本","sections":k},
             "guide":{"title":"指南书","sections":g},
